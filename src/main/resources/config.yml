@@ -1,0 +1,58 @@
+# Seasons Plugin - Configuration File
+
+# Temperature Unit
+# Set to 'true' to use Fahrenheit, 'false' to use Celsius.
+temperature-in-fahrenheit: false
+
+# Temperature Effect Thresholds
+# Players will start experiencing negative effects when their temperature goes below the cold threshold or above the heat threshold.
+cold-effect-threshold: -10.0
+heat-effect-threshold: 50.0
+
+# Visual Effects
+# Enable or disable visual effects like sweating or visible breath.
+visual-effects:
+  enabled: true
+
+# Temperature Update Interval
+# How often (in seconds) the plugin should recalculate player temperatures.
+temperature-update-interval: 2
+
+# Season Settings
+# Configure the duration of each season in Minecraft days.
+# Note: 1 Minecraft day is 20 minutes in real time by default.
+season-duration: 7
+
+# The world time when the current season started.
+# This is automatically managed by the plugin, DO NOT EDIT.
+season-start-time: 16350
+
+# Temperature Effects
+# Configure the effects applied to players when they are too cold or too hot.
+temperature-effects:
+  cold:
+    slowness:
+      enabled: true
+      amplifier-per-degree: 0.2 # How much the slowness amplifier increases per degree below the threshold
+      max-amplifier: 5
+    hunger:
+      enabled: true
+      amplifier-per-degree: 0.2
+      max-amplifier: 5
+    freezing-damage:
+      enabled: true
+      threshold-offset: -10 # How many degrees below the cold threshold that damage starts
+      damage-per-degree: 1 # How much damage to apply per degree below the freezing damage threshold
+  heat:
+    slowness:
+      enabled: true
+      amplifier-per-degree: 0.2
+      max-amplifier: 5
+    hunger:
+      enabled: true
+      amplifier-per-degree: 0.2
+      max-amplifier: 5
+    burning:
+      enabled: true
+      ticks-per-degree: 4 # How many ticks of fire to apply per degree above the threshold (20 ticks = 1 second)
+      max-ticks: 100
