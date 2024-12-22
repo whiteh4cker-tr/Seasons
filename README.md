@@ -27,15 +27,12 @@
 -   Increases the spawn rate of jungle animals (Parrots, Ocelots, and Pandas) by 30%.
 -   Removes flowers that were spawned during the Spring season when a chunk loads.
 
-## Spring
+## Autumn
 
--   Increases the spawn rate of baby animals
--   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
+-   Increases the spawn rate of Mushrooms, Frogs, and Foxes by 30%.
+-   Gives mobs a 20% chance to spawn with a Carved Pumpkin on their head.
 
--   Adds a variety of flowers to newly generated chunks
--   Removes any existing snow (layers and blocks), ice, and frosted ice blocks when a chunk loads
-
--   Spawns baby animals every 5 minutes
+-   Removes any Sweet Berry Bushes that might have spawned in previous seasons.
 
 ## Winter
 
@@ -48,12 +45,15 @@
 -   The effect consists of FIREWORK_SPARK particles spawning high in the sky around players.
 -   Snow layers in loaded chunks are removed when the season changes from Winter to another season (with a 1-minute delay).
 
-## Autumn
+## Spring
 
--   Increases the spawn rate of Mushrooms, Frogs, and Foxes by 30%.
--   Gives mobs a 20% chance to spawn with a Carved Pumpkin on their head.
+-   Increases the spawn rate of baby animals
+-   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
 
--   Removes any Sweet Berry Bushes that might have spawned in previous seasons.
+-   Adds a variety of flowers to newly generated chunks
+-   Removes any existing snow (layers and blocks), ice, and frosted ice blocks when a chunk loads
+
+-   Spawns baby animals every 5 minutes
 
 ## Temperature modifiers
 
