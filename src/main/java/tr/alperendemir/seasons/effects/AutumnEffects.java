@@ -6,8 +6,6 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
-import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
@@ -52,10 +50,15 @@ public class AutumnEffects implements Listener {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
             LivingEntity entity = event.getEntity();
 
-            // Increase spawn rate for Mushrooms, Frogs, and Foxes
+            // Increase spawn rate for Mooshrooms, Frogs, and Foxes
             if (autumnAnimals.contains(entity.getType())) {
                 if (new Random().nextInt(100) < 30) { // 30% chance to boost spawn
-                    event.setCancelled(false);
+                    // Spawn an extra entity of the same type nearby
+                    Location loc = entity.getLocation();
+                    World world = entity.getWorld();
+                    for (int i = 0; i < 2; i++) { // Spawn 2 extra, adjust as needed
+                        world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType());
+                    }
                 }
             }
 
@@ -69,29 +72,11 @@ public class AutumnEffects implements Listener {
         }
     }
 
-    @EventHandler
-    public void onEntitySpawn(EntitySpawnEvent event) {
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
-            Entity entity = event.getEntity();
-
-            // Increase spawn rate for Mushrooms, Frogs, and Foxes
-            if (autumnAnimals.contains(entity.getType())) {
-                if (new Random().nextInt(100) < 30) { // 30% chance to boost spawn
-                    event.setCancelled(false);
-                }
-            }
-
-            // Add pumpkin to mobs' heads
-            if (new Random().nextInt(100) < 20 && entity instanceof LivingEntity) { // 20% chance for LivingEntity
-                LivingEntity livingEntity = (LivingEntity) entity;
-                if (livingEntity.getEquipment() != null) {
-                    ItemStack pumpkin = new ItemStack(Material.CARVED_PUMPKIN);
-                    livingEntity.getEquipment().setHelmet(pumpkin);
-                }
-            }
-        }
+    // Helper method to get a random offset for spawning
+    private double getRandomOffset() {
+        Random random = new Random();
+        return random.nextDouble() * 6 - 3; // Returns a value between -3 and +3
     }
-
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
