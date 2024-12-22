@@ -2,7 +2,6 @@ package tr.alperendemir.seasons.temperature;
 
 import org.bukkit.block.Biome;
 import org.bukkit.entity.Player;
-import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.temperature.modifier.*;
 
 import java.util.ArrayList;
