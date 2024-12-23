@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.block.BlockGrowEvent;
@@ -25,6 +26,8 @@ public class WinterEffects implements Listener {
     private final Set<EntityType> winterEntities = new HashSet<>(Arrays.asList(
             EntityType.WOLF, EntityType.FOX, EntityType.POLAR_BEAR
     ));
+
+    private final Random random = new Random();
 
     public WinterEffects(Seasons plugin) {
         this.plugin = plugin;
@@ -81,26 +84,38 @@ public class WinterEffects implements Listener {
     }
 
     @EventHandler
-    public void onCreatureSpawn(CreatureSpawnEvent event) {
+    public void onEntitySpawn(EntitySpawnEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
-            LivingEntity entity = event.getEntity();
+            Entity entity = event.getEntity();
             if (entity.getType() == EntityType.SKELETON) {
                 event.setCancelled(true); // Cancel skeleton spawn
 
-                // Spawn a stray instead
-                Stray stray = (Stray) entity.getWorld().spawnEntity(event.getLocation(), EntityType.STRAY);
+                // Spawn a stray instead (no need to store the Stray in a variable)
+                entity.getWorld().spawnEntity(event.getLocation(), EntityType.STRAY);
+            }
+        }
+    }
 
-                // Copy equipment from the original skeleton (if needed)
-                // Skeleton skeleton = (Skeleton) entity;
-                // stray.getEquipment().setArmorContents(skeleton.getEquipment().getArmorContents());
-                // stray.getEquipment().setItemInMainHand(skeleton.getEquipment().getItemInMainHand());
-            } else if (winterEntities.contains(entity.getType())) {
+    @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent event) {
+        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
+            LivingEntity entity = event.getEntity();
+            if (winterEntities.contains(entity.getType())) {
                 // Increase spawn chance for winter entities
-                if (new Random().nextInt(100) < 50) { // 50% chance to boost spawn
-                    event.setCancelled(false); // Ensure they can spawn
+                if (random.nextInt(100) < 50) { // 50% chance to boost spawn
+                    // Spawn an extra entity of the same type nearby
+                    Location loc = entity.getLocation();
+                    World world = entity.getWorld();
+                    for (int i = 0; i < 2; i++) { // Spawn 2 extra, adjust as needed
+                        world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType());
+                    }
                 }
             }
         }
+    }
+
+    private double getRandomOffset() {
+        return random.nextDouble() * 6 - 3; // Returns a value between -3 and +3
     }
 
     @EventHandler
