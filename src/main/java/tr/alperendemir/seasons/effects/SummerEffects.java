@@ -11,7 +11,6 @@ import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -29,43 +28,40 @@ public class SummerEffects implements Listener {
 
     public SummerEffects(Seasons plugin) {
         this.plugin = plugin;
-        plugin.getLogger().info("SummerEffects constructor called.");
         startSummerEffects();
     }
 
     public void startSummerEffects() {
-        // Now it's safe to check the season and register events.
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Bukkit.getPluginManager().registerEvents(this, plugin);
-            plugin.getLogger().info("SummerEffects events registered.");
-            // Start other tasks here if necessary
-            Bukkit.getScheduler().runTaskTimer(plugin, this::spawnFallingLeaves, 0L, 20L); // Every second
+            Bukkit.getScheduler().runTaskTimer(plugin, this::spawnFallingLeaves, 0L, 20L);
         }
     }
 
-    @EventHandler
-    public void onWorldLoad(WorldLoadEvent event) {
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
-            World world = event.getWorld();
-            // Placeholder for setting water and sky color to light blue using ProtocolLib
-            updateWorldForSummer(world);
-        }
-    }
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Entity entity = event.getEntity();
             if (entity.getType() == EntityType.ZOMBIE) {
-                event.setCancelled(true); // Cancel zombie spawn
-                entity.getWorld().spawnEntity(event.getLocation(), EntityType.HUSK);
+                event.setCancelled(true);
+                Bukkit.getScheduler().runTask(plugin, () -> entity.getWorld().spawnEntity(event.getLocation(), EntityType.HUSK));
             } else if (jungleAnimals.contains(entity.getType())) {
-                // Increase spawn chance for jungle animals
-                if (new Random().nextInt(100) < 30) { // 30% chance to boost spawn
-                    event.setCancelled(false); // Ensure they can spawn
+                if (new Random().nextInt(100) < 30) {
+                    event.setCancelled(false);
+                    Location spawnLoc = entity.getLocation();
+                    for (int i = 0; i < 2; i++) {
+                        Location newLoc = spawnLoc.clone().add(getRandomOffset(), 0, getRandomOffset());
+                        Bukkit.getScheduler().runTask(plugin, () -> entity.getWorld().spawnEntity(newLoc, entity.getType()));
+                    }
                 }
             }
         }
+    }
+
+    private double getRandomOffset() {
+        Random random = new Random();
+        return random.nextDouble() * 6 - 3;
     }
 
     @EventHandler
@@ -73,7 +69,6 @@ public class SummerEffects implements Listener {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Block block = event.getBlock();
             if (isCrop(block.getType()) && isExposedToSky(block)) {
-                // Apply a growth boost
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     if (block.getState() instanceof org.bukkit.block.data.Ageable) {
                         org.bukkit.block.data.Ageable ageable = (org.bukkit.block.data.Ageable) block.getState().getBlockData();
@@ -82,7 +77,7 @@ public class SummerEffects implements Listener {
                             block.setBlockData(ageable);
                         }
                     }
-                }, 1L); // 1 tick delay
+                }, 1L);
             }
         }
     }
@@ -90,7 +85,6 @@ public class SummerEffects implements Listener {
     @EventHandler
     public void onWeatherChange(WeatherChangeEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER && event.toWeatherState()) {
-            // Cancel rain events
             event.setCancelled(true);
         }
     }
@@ -100,11 +94,9 @@ public class SummerEffects implements Listener {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Chunk chunk = event.getChunk();
             removeFlowers(chunk);
-            // Spawn berry bushes (consider performance impact)
             spawnBerryBushes(chunk);
         }
     }
-
 
     private void spawnFallingLeaves() {
         for (World world : Bukkit.getWorlds()) {
@@ -121,14 +113,12 @@ public class SummerEffects implements Listener {
         World world = player.getWorld();
         Random random = new Random();
 
-        // Random offset within 10 blocks
         double x = loc.getX() + random.nextDouble() * 20 - 10;
-        double y = loc.getY() + 10 + random.nextDouble() * 5; // 10-15 blocks above
+        double y = loc.getY() + 10 + random.nextDouble() * 5;
         double z = loc.getZ() + random.nextDouble() * 20 - 10;
 
         Location particleLoc = new Location(world, x, y, z);
 
-        // Spawn falling leaf particle
         world.spawnParticle(Particle.FALLING_WATER, particleLoc, 1, 0, 0, 0, 0);
     }
 
@@ -157,7 +147,7 @@ public class SummerEffects implements Listener {
 
     private void spawnBerryBushes(Chunk chunk) {
         Random random = new Random();
-        for (int i = 0; i < 16; i++) { // Reduced density
+        for (int i = 0; i < 16; i++) {
             int x = random.nextInt(16);
             int z = random.nextInt(16);
             int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
@@ -179,10 +169,5 @@ public class SummerEffects implements Listener {
                 Material.MELON_STEM, Material.PUMPKIN_STEM
         ));
         return cropTypes.contains(material);
-    }
-
-    private void updateWorldForSummer(World world) {
-        // Placeholder: Update world for summer effects
-        // This will likely involve ProtocolLib for visual changes
     }
 }
