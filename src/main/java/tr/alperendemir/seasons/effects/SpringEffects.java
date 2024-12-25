@@ -9,6 +9,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
@@ -76,6 +77,15 @@ public class SpringEffects implements Listener {
         }
     }
 
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent event) {
+        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
+            Chunk chunk = event.getChunk();
+            if (event.isNewChunk()) {
+                sprinkleFlowers(chunk);
+            }
+        }
+    }
 
     private void sprinkleFlowers(Chunk chunk) {
         Random random = new Random();
