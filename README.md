@@ -93,13 +93,8 @@ visual-effects:
 temperature-update-interval: 2
 
 # Season Settings
-# Configure the duration of each season in Minecraft days.
-# Note: 1 Minecraft day is 20 minutes in real time by default.
-season-duration: 7
-
-# The world time when the current season started.
-# This is automatically managed by the plugin, DO NOT EDIT.
-season-start-time: 16350
+# Configure the duration of each season in minutes.
+season-duration: 15
 
 # Temperature Effects
 # Configure the effects applied to players when they are too cold or too hot.
