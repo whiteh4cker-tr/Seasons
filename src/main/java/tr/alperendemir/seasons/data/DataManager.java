@@ -3,7 +3,6 @@ package tr.alperendemir.seasons.data;
 import org.bukkit.configuration.file.YamlConfiguration;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.player.PlayerTemperature;
-import tr.alperendemir.seasons.season.SeasonManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,33 +67,6 @@ public class DataManager {
 
         try {
             playerData.save(playerFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public SeasonManager.Season getCurrentSeason() {
-        YamlConfiguration seasonsData = YamlConfiguration.loadConfiguration(seasonsDataFile);
-        String seasonName = seasonsData.getString("current-season");
-
-        if (seasonName == null) {
-            return SeasonManager.Season.SPRING; // Default season
-        }
-
-        try {
-            return SeasonManager.Season.valueOf(seasonName.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            Seasons.getInstance().getLogger().warning("Invalid season name in seasons.yml: " + seasonName);
-            return SeasonManager.Season.SPRING; // Default season
-        }
-    }
-
-    public void setCurrentSeason(SeasonManager.Season season) {
-        YamlConfiguration seasonsData = YamlConfiguration.loadConfiguration(seasonsDataFile);
-        seasonsData.set("current-season", season.name());
-
-        try {
-            seasonsData.save(seasonsDataFile);
         } catch (IOException e) {
             e.printStackTrace();
         }
