@@ -51,7 +51,6 @@
 -   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
 
 -   Adds a variety of flowers to newly generated chunks
--   Spawns baby animals every 5 minutes
 
 ## Temperature modifiers
 
