@@ -63,10 +63,6 @@ public class ConfigManager {
         return seasonsConfig.getString("current-season", "SPRING"); // Get from seasons.yml
     }
 
-    public FileConfiguration getConfig() {
-        return config;
-    }
-
     public FileConfiguration getSeasonsConfig() {
         return seasonsConfig;
     }
