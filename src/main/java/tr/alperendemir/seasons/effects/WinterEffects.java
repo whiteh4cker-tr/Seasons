@@ -8,10 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.block.BlockGrowEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -74,14 +71,6 @@ public class WinterEffects implements Listener {
         return time > 13000 && time < 23000;
     }
 
-    @EventHandler
-    public void onWorldLoad(WorldLoadEvent event) {
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
-            World world = event.getWorld();
-            // Placeholder for setting water to dark blue and sky to whitish using ProtocolLib
-            updateWorldForWinter(world);
-        }
-    }
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
@@ -142,14 +131,6 @@ public class WinterEffects implements Listener {
         }
     }
 
-    @EventHandler
-    public void onChunkLoad(ChunkLoadEvent event) {
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
-            Chunk chunk = event.getChunk();
-            removeSnow(chunk);
-        }
-    }
-
     private boolean isExposedToSky(Block block) {
         return block.getLightFromSky() > 0;
     }
@@ -163,28 +144,4 @@ public class WinterEffects implements Listener {
         return cropTypes.contains(material);
     }
 
-    private void updateWorldForWinter(World world) {
-        // Placeholder: Update world for winter effects
-        // This will likely involve ProtocolLib for visual changes
-    }
-
-    private void removeSnow(Chunk chunk) {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (plugin.getSeasonManager().getCurrentSeason() != SeasonManager.Season.WINTER) {
-                    for (int x = 0; x < 16; x++) {
-                        for (int z = 0; z < 16; z++) {
-                            for (int y = chunk.getWorld().getMaxHeight() - 1; y >= 0; y--) {
-                                Block block = chunk.getBlock(x, y, z);
-                                if (block.getType() == Material.SNOW) {
-                                    block.setType(Material.AIR, false);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }.runTaskLater(plugin, 1200L);
-    }
 }
