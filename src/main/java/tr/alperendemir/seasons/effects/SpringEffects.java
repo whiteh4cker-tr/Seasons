@@ -3,11 +3,12 @@ package tr.alperendemir.seasons.effects;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Ageable;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
@@ -29,14 +30,10 @@ public class SpringEffects implements Listener {
         this.plugin = plugin;
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
             Bukkit.getPluginManager().registerEvents(this, plugin);
-            startSpringEffects();
         }
         initializeFlowerTypes();
     }
 
-    public void startSpringEffects() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::spawnBabyAnimals, 0L, 6000L); // 6000 ticks = 5 minutes
-    }
 
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event) {
@@ -52,13 +49,14 @@ public class SpringEffects implements Listener {
         ));
     }
 
-    private void spawnBabyAnimals() {
-        for (World world : Bukkit.getWorlds()) {
-            if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
-                for (LivingEntity entity : world.getLivingEntities()) {
-                    if (babyAnimals.contains(entity.getType())) {
-                        spawnBabies(entity);
-                    }
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent event) {
+        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
+            Entity entity = event.getEntity();
+            if (babyAnimals.contains(entity.getType())) {
+                // 30% chance to spawn extra babies
+                if (new Random().nextInt(100) < 30) {
+                    spawnBabies((LivingEntity) entity);
                 }
             }
         }
@@ -78,42 +76,22 @@ public class SpringEffects implements Listener {
         }
     }
 
-    @EventHandler
-    public void onChunkLoad(ChunkLoadEvent event) {
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
-            Chunk chunk = event.getChunk();
-
-            if (event.isNewChunk()) {
-                sprinkleFlowers(chunk);
-            }
-
-            removeSnowAndIce(chunk);
-        }
-    }
 
     private void sprinkleFlowers(Chunk chunk) {
         Random random = new Random();
-        for (int i = 0; i < 64; i++) { // Increased density of flowers
+        for (int i = 0; i < 32; i++) { // Reduced iteration count
             int x = random.nextInt(16);
             int z = random.nextInt(16);
-            int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
-            Block block = chunk.getBlock(x, y, z);
 
-            if (canPlaceFlower(block)) {
-                Material flowerType = flowerTypes.toArray(new Material[0])[random.nextInt(flowerTypes.size())];
-                block.getRelative(0, 1, 0).setType(flowerType, false);
-            }
-        }
-    }
-
-    private void removeSnowAndIce(Chunk chunk) {
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (int y = chunk.getWorld().getMaxHeight() - 1; y >= 0; y--) {
-                    Block block = chunk.getBlock(x, y, z);
-                    if (block.getType() == Material.SNOW || block.getType() == Material.ICE || block.getType() == Material.FROSTED_ICE || block.getType() == Material.SNOW_BLOCK) {
-                        block.setType(Material.AIR, false);
+            // Find the first non-air block from the top
+            for (int y = chunk.getWorld().getMaxHeight() - 1; y >= 0; y--) {
+                Block block = chunk.getBlock(x, y, z);
+                if (block.getType() != Material.AIR) {
+                    if (canPlaceFlower(block) && random.nextInt(100) < 25) { // Probability check
+                        Material flowerType = flowerTypes.toArray(new Material[0])[random.nextInt(flowerTypes.size())];
+                        block.getRelative(0, 1, 0).setType(flowerType, false);
                     }
+                    break; // Move to the next x,z once a suitable block is found
                 }
             }
         }
