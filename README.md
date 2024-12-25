@@ -1,6 +1,8 @@
 # Seasons
  Seasons plugin - Add temperature and seasons to your world.
 
+**Update 0.5-BETA: Remove your config.yml and let the plugin recreate it.**
+
 ## Features
 
 -   Temperature
