@@ -1,6 +1,8 @@
 # Seasons
  Seasons plugin - Add temperature and seasons to your world.
 
+**Update 0.5-BETA: Remove your config.yml and let the plugin recreate it.**
+
 ## Features
 
 -   Temperature
@@ -51,9 +53,6 @@
 -   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
 
 -   Adds a variety of flowers to newly generated chunks
--   Removes any existing snow (layers and blocks), ice, and frosted ice blocks when a chunk loads
-
--   Spawns baby animals every 5 minutes
 
 ## Temperature modifiers
 
@@ -95,13 +94,8 @@ visual-effects:
 temperature-update-interval: 2
 
 # Season Settings
-# Configure the duration of each season in Minecraft days.
-# Note: 1 Minecraft day is 20 minutes in real time by default.
-season-duration: 7
-
-# The world time when the current season started.
-# This is automatically managed by the plugin, DO NOT EDIT.
-season-start-time: 16350
+# Configure the duration of each season in minutes.
+season-duration: 15
 
 # Temperature Effects
 # Configure the effects applied to players when they are too cold or too hot.
