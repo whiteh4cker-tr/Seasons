@@ -51,8 +51,6 @@
 -   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
 
 -   Adds a variety of flowers to newly generated chunks
--   Removes any existing snow (layers and blocks), ice, and frosted ice blocks when a chunk loads
-
 -   Spawns baby animals every 5 minutes
 
 ## Temperature modifiers
