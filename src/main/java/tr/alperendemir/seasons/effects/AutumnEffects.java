@@ -7,7 +7,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
@@ -34,15 +33,6 @@ public class AutumnEffects implements Listener {
 
     public void startAutumnEffects() {
         Bukkit.getScheduler().runTaskTimer(plugin, this::spawnFallingLeaves, 0L, 20L); // Every second
-    }
-
-    @EventHandler
-    public void onWorldLoad(WorldLoadEvent event) {
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
-            World world = event.getWorld();
-            // Placeholder for setting water, sky, and biome colors using ProtocolLib
-            updateWorldForAutumn(world);
-        }
     }
 
     @EventHandler
@@ -191,13 +181,4 @@ public class AutumnEffects implements Listener {
         return material.toString().contains("LEAVES");
     }
 
-    private void updateChunkForAutumn(Chunk chunk) {
-        // Placeholder: Apply biome-specific changes for autumn
-        // This will likely involve ProtocolLib for visual changes
-    }
-
-    private void updateWorldForAutumn(World world) {
-        // Placeholder: Update world for autumn effects
-        // This will likely involve ProtocolLib for visual changes
-    }
 }
