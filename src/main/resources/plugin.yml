@@ -1,4 +1,4 @@
 name: Seasons
-version: '0.4-BETA'
+version: '0.5-BETA'
 main: tr.alperendemir.seasons.Seasons
 api-version: '1.21'
