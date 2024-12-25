@@ -1,6 +1,5 @@
 package tr.alperendemir.seasons.temperature.modifier;
 
-import org.bukkit.WeatherType;
 import org.bukkit.entity.Player;
 
 public class WeatherTemperatureModifier implements TemperatureModifier {
