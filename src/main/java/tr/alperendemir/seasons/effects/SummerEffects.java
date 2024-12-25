@@ -147,13 +147,14 @@ public class SummerEffects implements Listener {
 
     private void spawnBerryBushes(Chunk chunk) {
         Random random = new Random();
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 8; i++) { // Reduced from 16 to 8, adjust as needed
             int x = random.nextInt(16);
             int z = random.nextInt(16);
             int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
             Block block = chunk.getBlock(x, y, z);
 
-            if (block.getType() == Material.GRASS_BLOCK) {
+            // Add a probability check here (e.g., 25% chance)
+            if (block.getType() == Material.GRASS_BLOCK && random.nextInt(100) < 25) {
                 block.getRelative(0, 1, 0).setType(Material.SWEET_BERRY_BUSH, false);
             }
         }
