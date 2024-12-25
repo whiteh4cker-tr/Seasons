@@ -45,7 +45,6 @@
 -   Has a 20% chance to display an aurora borealis effect in the sky each night.
 
 -   The effect consists of FIREWORK_SPARK particles spawning high in the sky around players.
--   Snow layers in loaded chunks are removed when the season changes from Winter to another season (with a 1-minute delay).
 
 ## Spring
 
