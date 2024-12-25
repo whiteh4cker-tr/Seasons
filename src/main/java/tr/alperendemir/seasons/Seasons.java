@@ -31,6 +31,10 @@ public class Seasons extends JavaPlugin {
         seasonManager = new SeasonManager(this);
         getLogger().info("SeasonManager created."); // Debug log
 
+        Bukkit.getScheduler().scheduleSyncDelayedTask(this, () -> {
+            this.seasonManager.start();
+        }, 20L); // Delay by 1 second
+
         // Schedule activation of effects to ensure everything is initialized
         Bukkit.getScheduler().runTask(this, () -> {
             seasonManager.activateCurrentSeasonEffects();
