@@ -1,7 +1,6 @@
 package tr.alperendemir.seasons.season;
 
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.config.ConfigManager;
@@ -18,33 +17,25 @@ public class SeasonManager {
     private WinterEffects winterEffects;
     private SummerEffects summerEffects;
     private AutumnEffects autumnEffects;
-    private int seasonDuration; // Duration in Minecraft days
-    private long seasonStartTime; // Time when the current season started
+    private int seasonDuration; // Duration in minutes
+    private long seasonStartRealTime; // System time when the season started
 
     public SeasonManager(Seasons plugin) {
         this.plugin = plugin;
         plugin.getLogger().info("SeasonManager constructor called."); // Debug log
 
+        // Load configuration but do not start timers yet
         loadConfiguration();
-        startSeasonTimer();
-        // activateCurrentSeasonEffects(); // Removed this line
     }
 
-    public void activateCurrentSeasonEffects() {
-        plugin.getLogger().info("Activating effects for season: " + currentSeason);
-        if (currentSeason == Season.SPRING) {
-            springEffects = new SpringEffects(plugin);
-            springEffects.startSpringEffects();
-        } else if (currentSeason == Season.WINTER) {
-            winterEffects = new WinterEffects(plugin);
-            winterEffects.startWinterEffects();
-        } else if (currentSeason == Season.SUMMER) {
-            summerEffects = new SummerEffects(plugin);
-            summerEffects.startSummerEffects();
-        } else if (currentSeason == Season.AUTUMN) {
-            autumnEffects = new AutumnEffects(plugin);
-            autumnEffects.startAutumnEffects();
-        }
+    /**
+     * Starts the season timer and activates effects for the current season.
+     * This method should be called after the plugin is fully enabled.
+     */
+    public void start() {
+        plugin.getLogger().info("Starting SeasonManager timers and effects.");
+        startSeasonTimer();
+        activateCurrentSeasonEffects();
     }
 
     private void loadConfiguration() {
@@ -52,7 +43,7 @@ public class SeasonManager {
 
         plugin.getLogger().info("SeasonManager loading configuration."); // Debug log
 
-        // Load season duration from config.yml
+        // Load season duration from config.yml using ConfigManager's method
         seasonDuration = configManager.getSeasonDuration();
         plugin.getLogger().info("Season duration loaded: " + seasonDuration); // Debug log
 
@@ -60,16 +51,15 @@ public class SeasonManager {
         String seasonName = configManager.getCurrentSeasonName();
         plugin.getLogger().info("Current season loaded from config: " + seasonName); // Debug log
 
-        currentSeason = Season.valueOf(seasonName.toUpperCase());
-
-        // Load season start time from config.yml
-        seasonStartTime = configManager.getConfig().getLong("season-start-time", 0);
-
-        if (seasonStartTime == 0) {
-            // First-time setup or reset
-            seasonStartTime = getCurrentWorldTime();
+        if (seasonName != null) {
+            currentSeason = Season.valueOf(seasonName.toUpperCase());
+        } else {
+            currentSeason = Season.SPRING; // Default to SPRING if no season is configured
+            plugin.getLogger().warning("No season configured in seasons.yml. Defaulting to SPRING.");
         }
-        saveCurrentSeasonData(); // Save data after loading
+
+        // Initialize season start time based on the configured duration
+        seasonStartRealTime = System.currentTimeMillis();
     }
 
     public void setSeason(Season newSeason) {
@@ -78,26 +68,64 @@ public class SeasonManager {
         }
 
         // Clean up previous season's effects
-        if (currentSeason == Season.SPRING && springEffects != null) {
-            HandlerList.unregisterAll(springEffects);
-            springEffects = null;
-        } else if (currentSeason == Season.WINTER && winterEffects != null) {
-            HandlerList.unregisterAll(winterEffects);
-            winterEffects = null;
-        } else if (currentSeason == Season.SUMMER && summerEffects != null) {
-            HandlerList.unregisterAll(summerEffects);
-            summerEffects = null;
-        } else if (currentSeason == Season.AUTUMN && autumnEffects != null) {
-            HandlerList.unregisterAll(autumnEffects);
-            autumnEffects = null;
-        }
+        unregisterSeasonEffects(currentSeason);
 
         currentSeason = newSeason;
-        seasonStartTime = getCurrentWorldTime();
+        seasonStartRealTime = System.currentTimeMillis(); // Update to the current time
         saveCurrentSeasonData();
 
         // Activate effects for the new season
         activateCurrentSeasonEffects();
+    }
+
+    private void unregisterSeasonEffects(Season season) {
+        switch (season) {
+            case SPRING:
+                if (springEffects != null) {
+                    HandlerList.unregisterAll(springEffects);
+                    springEffects = null;
+                }
+                break;
+            case WINTER:
+                if (winterEffects != null) {
+                    HandlerList.unregisterAll(winterEffects);
+                    winterEffects = null;
+                }
+                break;
+            case SUMMER:
+                if (summerEffects != null) {
+                    HandlerList.unregisterAll(summerEffects);
+                    summerEffects = null;
+                }
+                break;
+            case AUTUMN:
+                if (autumnEffects != null) {
+                    HandlerList.unregisterAll(autumnEffects);
+                    autumnEffects = null;
+                }
+                break;
+        }
+    }
+
+    public void activateCurrentSeasonEffects() {
+        plugin.getLogger().info("Activating effects for season: " + currentSeason);
+        switch (currentSeason) {
+            case SPRING:
+                springEffects = new SpringEffects(plugin);
+                break;
+            case WINTER:
+                winterEffects = new WinterEffects(plugin);
+                winterEffects.startWinterEffects();
+                break;
+            case SUMMER:
+                summerEffects = new SummerEffects(plugin);
+                summerEffects.startSummerEffects();
+                break;
+            case AUTUMN:
+                autumnEffects = new AutumnEffects(plugin);
+                autumnEffects.startAutumnEffects();
+                break;
+        }
     }
 
     public Season getCurrentSeason() {
@@ -109,15 +137,14 @@ public class SeasonManager {
             if (isSeasonChangeDue()) {
                 changeSeason();
             }
-        }, 0L, 1200L); // Check every minute (1200 ticks)
+        }, 0L, 60 * 20L); // Check every minute (60 seconds * 20 ticks/second)
     }
 
     private boolean isSeasonChangeDue() {
-        long currentTime = getCurrentWorldTime();
-        long elapsedTime = currentTime - seasonStartTime;
-        long seasonDurationTicks = seasonDuration * 24000L; // Convert days to ticks
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime = (currentTime - seasonStartRealTime) / (1000 * 60); // Convert to minutes
 
-        return elapsedTime >= seasonDurationTicks;
+        return elapsedTime >= seasonDuration;
     }
 
     private void changeSeason() {
@@ -126,16 +153,7 @@ public class SeasonManager {
         setSeason(Season.values()[nextSeasonOrdinal]);
     }
 
-    private long getCurrentWorldTime() {
-        // Assuming the main world is the first one loaded by the server
-        return Bukkit.getWorlds().get(0).getTime();
-    }
-
     private void saveCurrentSeasonData() {
-        // Save to config.yml
-        plugin.getConfigManager().getConfig().set("season-start-time", seasonStartTime);
-        plugin.saveConfig();
-
         // Save to seasons.yml
         plugin.getConfigManager().getSeasonsConfig().set("current-season", currentSeason.name());
         plugin.getConfigManager().saveSeasonsConfig();
