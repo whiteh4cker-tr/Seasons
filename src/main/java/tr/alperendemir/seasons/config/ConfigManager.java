@@ -56,7 +56,7 @@ public class ConfigManager {
     }
 
     public int getSeasonDuration() {
-        return config.getInt("season-duration", 7); // Default to 7 days
+        return config.getInt("season-duration", 15); // Default to 1 minute
     }
 
     public String getCurrentSeasonName() {
