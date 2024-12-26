@@ -7,10 +7,11 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -36,11 +37,6 @@ public class SpringEffects implements Listener {
     }
 
 
-    @EventHandler
-    public void onWorldLoad(WorldLoadEvent event) {
-        // Sky color change is not possible without ProtocolLib
-    }
-
     private void initializeFlowerTypes() {
         flowerTypes.addAll(Arrays.asList(
                 Material.DANDELION, Material.POPPY, Material.BLUE_ORCHID, Material.ALLIUM,
@@ -50,14 +46,23 @@ public class SpringEffects implements Listener {
         ));
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onEntitySpawn(EntitySpawnEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
             Entity entity = event.getEntity();
             if (babyAnimals.contains(entity.getType())) {
                 // 30% chance to spawn extra babies
                 if (new Random().nextInt(100) < 30) {
-                    spawnBabies((LivingEntity) entity);
+                    // Use a BukkitRunnable to spawn additional babies after the event
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            spawnBabies((LivingEntity) entity);
+                        }
+                    }.runTaskLater(plugin, 1L); // Delay by 1 tick
                 }
             }
         }
@@ -70,14 +75,18 @@ public class SpringEffects implements Listener {
 
         int numberOfBabies = random.nextInt(3) + 3; // 3 to 5 babies
         for (int i = 0; i < numberOfBabies; i++) {
-            LivingEntity baby = (LivingEntity) world.spawnEntity(loc, entity.getType());
-            if (baby instanceof Ageable) {
-                ((Ageable) baby).setBaby();
+            try {
+                LivingEntity baby = (LivingEntity) world.spawnEntity(loc, entity.getType());
+                if (baby instanceof Ageable) {
+                    ((Ageable) baby).setBaby();
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Failed to spawn baby entity: " + e.getMessage());
             }
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onChunkLoad(ChunkLoadEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
             Chunk chunk = event.getChunk();

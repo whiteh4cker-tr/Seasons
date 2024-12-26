@@ -4,10 +4,12 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -35,20 +37,26 @@ public class AutumnEffects implements Listener {
         Bukkit.getScheduler().runTaskTimer(plugin, this::spawnFallingLeaves, 0L, 20L); // Every second
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
             LivingEntity entity = event.getEntity();
-
             // Increase spawn rate for Mooshrooms, Frogs, and Foxes
             if (autumnAnimals.contains(entity.getType())) {
-                if (new Random().nextInt(100) < 30) { // 30% chance to boost spawn
-                    // Spawn an extra entity of the same type nearby
+                if (new Random().nextInt(100) < 30) {
                     Location loc = entity.getLocation();
                     World world = entity.getWorld();
-                    for (int i = 0; i < 2; i++) { // Spawn 2 extra, adjust as needed
-                        world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType());
-                    }
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            for (int i = 0; i < 2; i++) {
+                                world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType());
+                            }
+                        }
+                    }.runTaskLater(plugin, 1L); // Delay by 1 tick
                 }
             }
 
@@ -68,7 +76,7 @@ public class AutumnEffects implements Listener {
         return random.nextDouble() * 6 - 3; // Returns a value between -3 and +3
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onChunkLoad(ChunkLoadEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
             Chunk chunk = event.getChunk();

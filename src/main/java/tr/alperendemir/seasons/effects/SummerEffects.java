@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
@@ -39,8 +40,11 @@ public class SummerEffects implements Listener {
     }
 
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onEntitySpawn(EntitySpawnEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Entity entity = event.getEntity();
             if (entity.getType() == EntityType.ZOMBIE) {
@@ -64,7 +68,7 @@ public class SummerEffects implements Listener {
         return random.nextDouble() * 6 - 3;
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onBlockGrow(BlockGrowEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Block block = event.getBlock();
@@ -82,14 +86,14 @@ public class SummerEffects implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onWeatherChange(WeatherChangeEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER && event.toWeatherState()) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onChunkLoad(ChunkLoadEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Chunk chunk = event.getChunk();

@@ -4,11 +4,13 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.block.BlockGrowEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -72,8 +74,11 @@ public class WinterEffects implements Listener {
     }
 
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onEntitySpawn(EntitySpawnEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
             Entity entity = event.getEntity();
             if (entity.getType() == EntityType.SKELETON) {
@@ -85,19 +90,30 @@ public class WinterEffects implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onCreatureSpawn(CreatureSpawnEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
             LivingEntity entity = event.getEntity();
             if (winterEntities.contains(entity.getType())) {
                 // Increase spawn chance for winter entities
                 if (random.nextInt(100) < 50) { // 50% chance to boost spawn
-                    // Spawn an extra entity of the same type nearby
+                    // Store the entity's location, world, and type for later use
                     Location loc = entity.getLocation();
                     World world = entity.getWorld();
-                    for (int i = 0; i < 2; i++) { // Spawn 2 extra, adjust as needed
-                        world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType());
-                    }
+                    EntityType entityType = entity.getType();
+
+                    // Use a BukkitRunnable to spawn additional entities after the event
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            for (int i = 0; i < 2; i++) { // Spawn 2 extra, adjust as needed
+                                world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entityType);
+                            }
+                        }
+                    }.runTaskLater(plugin, 1L); // Delay by 1 tick
                 }
             }
         }
@@ -107,7 +123,7 @@ public class WinterEffects implements Listener {
         return random.nextDouble() * 6 - 3; // Returns a value between -3 and +3
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onBlockForm(BlockFormEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
             Block block = event.getBlock();
@@ -120,7 +136,7 @@ public class WinterEffects implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     public void onBlockGrow(BlockGrowEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
             Block block = event.getBlock();
