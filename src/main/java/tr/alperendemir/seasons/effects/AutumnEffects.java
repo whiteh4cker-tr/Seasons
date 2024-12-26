@@ -44,21 +44,6 @@ public class AutumnEffects implements Listener {
         }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
             LivingEntity entity = event.getEntity();
-            // Increase spawn rate for Mooshrooms, Frogs, and Foxes
-            if (autumnAnimals.contains(entity.getType())) {
-                if (new Random().nextInt(100) < 30) {
-                    Location loc = entity.getLocation();
-                    World world = entity.getWorld();
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            for (int i = 0; i < 2; i++) {
-                                world.spawnEntity(loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType());
-                            }
-                        }
-                    }.runTaskLater(plugin, 1L); // Delay by 1 tick
-                }
-            }
 
             // Add pumpkin to mobs' heads
             if (new Random().nextInt(100) < 20) { // 20% chance

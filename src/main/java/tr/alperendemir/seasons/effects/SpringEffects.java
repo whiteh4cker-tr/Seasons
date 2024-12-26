@@ -46,45 +46,6 @@ public class SpringEffects implements Listener {
         ));
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onEntitySpawn(EntitySpawnEvent event) {
-        if (event.isCancelled()) {
-            return;
-        }
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
-            Entity entity = event.getEntity();
-            if (babyAnimals.contains(entity.getType())) {
-                // 30% chance to spawn extra babies
-                if (new Random().nextInt(100) < 30) {
-                    // Use a BukkitRunnable to spawn additional babies after the event
-                    new BukkitRunnable() {
-                        @Override
-                        public void run() {
-                            spawnBabies((LivingEntity) entity);
-                        }
-                    }.runTaskLater(plugin, 1L); // Delay by 1 tick
-                }
-            }
-        }
-    }
-
-    private void spawnBabies(LivingEntity entity) {
-        Location loc = entity.getLocation();
-        World world = entity.getWorld();
-        Random random = new Random();
-
-        int numberOfBabies = random.nextInt(3) + 3; // 3 to 5 babies
-        for (int i = 0; i < numberOfBabies; i++) {
-            try {
-                LivingEntity baby = (LivingEntity) world.spawnEntity(loc, entity.getType());
-                if (baby instanceof Ageable) {
-                    ((Ageable) baby).setBaby();
-                }
-            } catch (Exception e) {
-                plugin.getLogger().warning("Failed to spawn baby entity: " + e.getMessage());
-            }
-        }
-    }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onChunkLoad(ChunkLoadEvent event) {

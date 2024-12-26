@@ -50,22 +50,8 @@ public class SummerEffects implements Listener {
             if (entity.getType() == EntityType.ZOMBIE) {
                 event.setCancelled(true);
                 Bukkit.getScheduler().runTask(plugin, () -> entity.getWorld().spawnEntity(event.getLocation(), EntityType.HUSK));
-            } else if (jungleAnimals.contains(entity.getType())) {
-                if (new Random().nextInt(100) < 30) {
-                    event.setCancelled(false);
-                    Location spawnLoc = entity.getLocation();
-                    for (int i = 0; i < 2; i++) {
-                        Location newLoc = spawnLoc.clone().add(getRandomOffset(), 0, getRandomOffset());
-                        Bukkit.getScheduler().runTask(plugin, () -> entity.getWorld().spawnEntity(newLoc, entity.getType()));
-                    }
-                }
             }
         }
-    }
-
-    private double getRandomOffset() {
-        Random random = new Random();
-        return random.nextDouble() * 6 - 3;
     }
 
     @EventHandler(priority = EventPriority.LOW)
