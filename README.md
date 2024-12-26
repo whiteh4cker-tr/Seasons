@@ -24,12 +24,10 @@
 -   Faster crop growth
 -   Husks will spawn instead of zombies
 
--   Increases the spawn rate of jungle animals (Parrots, Ocelots, and Pandas) by 30%.
 -   Removes flowers that were spawned during the Spring season when a chunk loads.
 
 ![autumn](https://i.imgur.com/0ePOSSK.png)
 
--   Increases the spawn rate of Mushrooms, Frogs, and Foxes by 30%.
 -   Gives mobs a 20% chance to spawn with a Carved Pumpkin on their head.
 
 -   Removes any Sweet Berry Bushes that might have spawned in previous seasons.
@@ -37,17 +35,12 @@
 ![winter](https://imgur.com/4vpOXyN.png)
 
 -   Skeletons that spawn naturally during Winter will be replaced with Strays.
--   Increases the spawn rate of Wolves, Foxes, and Polar Bears by 50%.
-
 -   Crops and plants will not grow if they are exposed to the sky (no solid block above them).
--   Has a 20% chance to display an aurora borealis effect in the sky each night.
 
+-   Has a 20% chance to display an aurora borealis effect in the sky each night.
 -   The effect consists of FIREWORK_SPARK particles spawning high in the sky around players.
 
 ![spring](https://imgur.com/l1dXOqs.png)
-
--   Increases the spawn rate of baby animals
--   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
 
 -   Adds a variety of flowers to newly generated chunks
 
