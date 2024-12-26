@@ -1,9 +1,7 @@
 # Seasons
  Seasons plugin - Add temperature and seasons to your world.
 
-**Update 0.5-BETA: Remove your config.yml and let the plugin recreate it.**
-
-## Features
+![features](https://i.imgur.com/JFPNAPj.png)
 
 -   Temperature
 -   Freezing (to death)
@@ -18,7 +16,7 @@
 
 ![alt text](https://i.imgur.com/vqd7ImQ.png)
 
-## Summer
+![summer](https://i.imgur.com/QoD9qoQ.png)
 
 -   No rain
 -   Berry bushes everywhere
@@ -29,14 +27,14 @@
 -   Increases the spawn rate of jungle animals (Parrots, Ocelots, and Pandas) by 30%.
 -   Removes flowers that were spawned during the Spring season when a chunk loads.
 
-## Autumn
+![autumn](https://i.imgur.com/0ePOSSK.png)
 
 -   Increases the spawn rate of Mushrooms, Frogs, and Foxes by 30%.
 -   Gives mobs a 20% chance to spawn with a Carved Pumpkin on their head.
 
 -   Removes any Sweet Berry Bushes that might have spawned in previous seasons.
 
-## Winter
+![winter](https://imgur.com/4vpOXyN.png)
 
 -   Skeletons that spawn naturally during Winter will be replaced with Strays.
 -   Increases the spawn rate of Wolves, Foxes, and Polar Bears by 50%.
@@ -46,14 +44,14 @@
 
 -   The effect consists of FIREWORK_SPARK particles spawning high in the sky around players.
 
-## Spring
+![spring](https://imgur.com/l1dXOqs.png)
 
 -   Increases the spawn rate of baby animals
 -   Specifically targets: Sheep, Cows, Pigs, Rabbits, and Chickens.
 
 -   Adds a variety of flowers to newly generated chunks
 
-## Temperature modifiers
+![modifiers](https://imgur.com/424WENZ.png)
 
 -   Armor
 -   Biome
@@ -70,6 +68,7 @@
 -   Water
 -   Weather
 
+![config](https://imgur.com/WuW0y71.png)
 ## config.yml
 ```
 # Seasons Plugin - Configuration File
