@@ -93,6 +93,6 @@ public class TemperatureCalculator {
         biomeTemperatures.put(Biome.ERODED_BADLANDS, 28.0);
         // ... add more biomes and their temperatures ...
 
-        return biomeTemperatures.getOrDefault(biome, 25.0); // Default temperature 25.0
+        return biomeTemperatures.getOrDefault(biome, 20.0); // Default temperature 25.0
     }
 }
