@@ -11,11 +11,6 @@ public class BiomeTemperatureModifier implements tr.alperendemir.seasons.tempera
     public double modifyTemperature(Player player, double currentTemperature) {
         Biome biome = player.getWorld().getBiome(player.getLocation());
         // You'll need a more comprehensive biome temperature mapping
-        if (biome.equals(DESERT)) {
-            return currentTemperature + 5;
-        } else if (biome.equals(ICE_SPIKES)) {
-            return currentTemperature - 5;
-        }
         return currentTemperature;
     }
 }
