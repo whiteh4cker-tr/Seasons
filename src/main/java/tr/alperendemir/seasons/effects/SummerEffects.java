@@ -143,6 +143,12 @@ public class SummerEffects implements Listener {
             int x = random.nextInt(16);
             int z = random.nextInt(16);
             int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
+
+            // Check if y is valid
+            if (y < 0 || y > 254) {
+                continue; // Skip this iteration if y is invalid
+            }
+
             Block block = chunk.getBlock(x, y, z);
 
             // Add a probability check here (e.g., 25% chance)

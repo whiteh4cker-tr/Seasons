@@ -104,6 +104,12 @@ public class AutumnEffects implements Listener {
             int x = random.nextInt(16);
             int z = random.nextInt(16);
             int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
+
+            // Ensure y is within the valid range (0 to 254)
+            if (y < 0 || y > 254) {
+                continue; // Skip this iteration if y is invalid
+            }
+
             Block block = chunk.getBlock(x, y, z);
 
             if (block.getType() == Material.GRASS_BLOCK) {
@@ -115,6 +121,8 @@ public class AutumnEffects implements Listener {
                         // 50% chance to place a mushroom on each block in the patch
                         if (random.nextInt(100) < 30) {
                             Block relative = block.getRelative(dx, 0, dz);
+
+                            // Ensure the block above is within the valid range
                             if (relative.getRelative(0, 1, 0).getType() == Material.AIR) {
                                 relative.getRelative(0, 1, 0).setType(mushroomType, false);
                             }
