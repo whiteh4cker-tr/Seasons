@@ -4,7 +4,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -12,6 +12,7 @@ import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.metadata.FixedMetadataValue;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -27,6 +28,8 @@ public class SummerEffects implements Listener {
             EntityType.PARROT, EntityType.OCELOT, EntityType.PANDA
     ));
 
+    private final Random random = new Random();
+
     public SummerEffects(Seasons plugin) {
         this.plugin = plugin;
         startSummerEffects();
@@ -35,10 +38,12 @@ public class SummerEffects implements Listener {
     public void startSummerEffects() {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Bukkit.getPluginManager().registerEvents(this, plugin);
-            Bukkit.getScheduler().runTaskTimer(plugin, this::spawnFallingLeaves, 0L, 20L);
         }
     }
 
+    private double getRandomOffset() {
+        return -2 + (4 * random.nextDouble()); // Random offset between -2 and 2
+    }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntitySpawn(EntitySpawnEvent event) {
@@ -47,6 +52,27 @@ public class SummerEffects implements Listener {
         }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Entity entity = event.getEntity();
+            if (jungleAnimals.contains(entity.getType())) {
+                // Check if the entity was already spawned by this logic
+                if (!entity.hasMetadata("summerSpawned")) {
+                    // Mark the original entity immediately to prevent re-triggering
+                    entity.setMetadata("summerSpawned", new FixedMetadataValue(plugin, true));
+
+                    // 30% chance to spawn one additional entity
+                    if (random.nextInt(100) < 30) {
+                        Location loc = entity.getLocation();
+                        World world = entity.getWorld();
+
+                        // Spawn one additional entity
+                        LivingEntity newEntity = (LivingEntity) world.spawnEntity(
+                                loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType()
+                        );
+
+                        // Add metadata to the newly spawned entity
+                        newEntity.setMetadata("summerSpawned", new FixedMetadataValue(plugin, true));
+                    }
+                }
+            }
             if (entity.getType() == EntityType.ZOMBIE) {
                 event.setCancelled(true);
                 Bukkit.getScheduler().runTask(plugin, () -> entity.getWorld().spawnEntity(event.getLocation(), EntityType.HUSK));
@@ -86,30 +112,6 @@ public class SummerEffects implements Listener {
             removeFlowers(chunk);
             spawnBerryBushes(chunk);
         }
-    }
-
-    private void spawnFallingLeaves() {
-        for (World world : Bukkit.getWorlds()) {
-            if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
-                for (Player player : world.getPlayers()) {
-                    spawnLeafParticles(player);
-                }
-            }
-        }
-    }
-
-    private void spawnLeafParticles(Player player) {
-        Location loc = player.getLocation();
-        World world = player.getWorld();
-        Random random = new Random();
-
-        double x = loc.getX() + random.nextDouble() * 20 - 10;
-        double y = loc.getY() + 10 + random.nextDouble() * 5;
-        double z = loc.getZ() + random.nextDouble() * 20 - 10;
-
-        Location particleLoc = new Location(world, x, y, z);
-
-        world.spawnParticle(Particle.FALLING_WATER, particleLoc, 1, 0, 0, 0, 0);
     }
 
     private void removeFlowers(Chunk chunk) {

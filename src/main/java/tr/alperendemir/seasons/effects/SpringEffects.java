@@ -2,7 +2,6 @@ package tr.alperendemir.seasons.effects;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
@@ -11,7 +10,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.metadata.FixedMetadataValue;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -24,9 +23,11 @@ public class SpringEffects implements Listener {
 
     private final Seasons plugin;
     private final Set<Material> flowerTypes = new HashSet<>();
-    private final Set<EntityType> babyAnimals = new HashSet<>(Arrays.asList(
+    private final Set<EntityType> springAnimals = new HashSet<>(Arrays.asList(
             EntityType.SHEEP, EntityType.COW, EntityType.PIG, EntityType.RABBIT, EntityType.CHICKEN
     ));
+
+    private final Random random = new Random();
 
     public SpringEffects(Seasons plugin) {
         this.plugin = plugin;
@@ -46,6 +47,45 @@ public class SpringEffects implements Listener {
         ));
     }
 
+    private double getRandomOffset() {
+        return random.nextDouble() * 6 - 3; // Returns a value between -3 and +3
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onEntitySpawn(EntitySpawnEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
+            Entity entity = event.getEntity();
+            // Check if the entity has metadata indicating it was custom spawned
+            if (entity.hasMetadata("springSpawned")) {
+                return; // Ignore entities spawned by this plugin
+            }
+
+            if (springAnimals.contains(entity.getType())) {
+                // Check if the entity was already spawned by this logic
+                if (!entity.hasMetadata("springSpawned")) {
+                    // Mark the original entity immediately to prevent re-triggering
+                    entity.setMetadata("springSpawned", new FixedMetadataValue(plugin, true));
+
+                    // 30% chance to spawn one additional entity
+                    if (random.nextInt(100) < 30) {
+                        Location loc = entity.getLocation();
+                        World world = entity.getWorld();
+
+                        // Spawn one additional entity
+                        LivingEntity newEntity = (LivingEntity) world.spawnEntity(
+                                loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType()
+                        );
+
+                        // Add metadata to the newly spawned entity
+                        newEntity.setMetadata("springSpawned", new FixedMetadataValue(plugin, true));
+                    }
+                }
+            }
+        }
+    }
 
     @EventHandler(priority = EventPriority.LOW)
     public void onChunkLoad(ChunkLoadEvent event) {

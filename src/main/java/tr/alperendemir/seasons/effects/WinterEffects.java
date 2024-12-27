@@ -7,11 +7,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.scheduler.BukkitRunnable;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -74,6 +72,9 @@ public class WinterEffects implements Listener {
         return time > 13000 && time < 23000;
     }
 
+    private double getRandomOffset() {
+        return random.nextDouble() * 6 - 3; // Returns a value between -3 and +3
+    }
 
     @EventHandler(priority = EventPriority.LOWEST)
     public void onEntitySpawn(EntitySpawnEvent event) {
@@ -82,6 +83,33 @@ public class WinterEffects implements Listener {
         }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
             Entity entity = event.getEntity();
+            // Check if the entity has metadata indicating it was custom spawned
+            if (entity.hasMetadata("winterSpawned")) {
+                return; // Ignore entities spawned by this plugin
+            }
+
+            if (winterEntities.contains(entity.getType())) {
+                // Check if the entity was already spawned by this logic
+                if (!entity.hasMetadata("winterSpawned")) {
+                    // Mark the original entity immediately to prevent re-triggering
+                    entity.setMetadata("winterSpawned", new FixedMetadataValue(plugin, true));
+
+                    // 50% chance to spawn one additional entity
+                    if (random.nextInt(100) < 50) {
+                        Location loc = entity.getLocation();
+                        World world = entity.getWorld();
+
+                        // Spawn one additional entity
+                        LivingEntity newEntity = (LivingEntity) world.spawnEntity(
+                                loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType()
+                        );
+
+                        // Add metadata to the newly spawned entity
+                        newEntity.setMetadata("winterSpawned", new FixedMetadataValue(plugin, true));
+                    }
+                }
+            }
+
             if (entity.getType() == EntityType.SKELETON) {
                 event.setCancelled(true); // Cancel skeleton spawn
 

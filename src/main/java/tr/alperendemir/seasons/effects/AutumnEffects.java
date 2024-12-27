@@ -9,7 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.metadata.FixedMetadataValue;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
 
@@ -25,6 +25,8 @@ public class AutumnEffects implements Listener {
             EntityType.MOOSHROOM, EntityType.FROG, EntityType.FOX
     ));
 
+    private final Random random = new Random();
+
     public AutumnEffects(Seasons plugin) {
         this.plugin = plugin;
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
@@ -34,7 +36,7 @@ public class AutumnEffects implements Listener {
     }
 
     public void startAutumnEffects() {
-        Bukkit.getScheduler().runTaskTimer(plugin, this::spawnFallingLeaves, 0L, 20L); // Every second
+        // No effects for now
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -44,6 +46,28 @@ public class AutumnEffects implements Listener {
         }
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
             LivingEntity entity = event.getEntity();
+
+            if (autumnAnimals.contains(entity.getType())) {
+                // Check if the entity was already spawned by this logic
+                if (!entity.hasMetadata("autumnSpawned")) {
+                    // Mark the original entity immediately to prevent re-triggering
+                    entity.setMetadata("autumnSpawned", new FixedMetadataValue(plugin, true));
+
+                    // 30% chance to spawn one additional entity
+                    if (random.nextInt(100) < 30) {
+                        Location loc = entity.getLocation();
+                        World world = entity.getWorld();
+
+                        // Spawn one additional entity
+                        LivingEntity newEntity = (LivingEntity) world.spawnEntity(
+                                loc.clone().add(getRandomOffset(), 0, getRandomOffset()), entity.getType()
+                        );
+
+                        // Add metadata to the newly spawned entity
+                        newEntity.setMetadata("autumnSpawned", new FixedMetadataValue(plugin, true));
+                    }
+                }
+            }
 
             // Add pumpkin to mobs' heads
             if (new Random().nextInt(100) < 20) { // 20% chance
@@ -72,71 +96,11 @@ public class AutumnEffects implements Listener {
         }
     }
 
-    private void spawnFallingLeaves() {
-        for (World world : Bukkit.getWorlds()) {
-            if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
-                for (Player player : world.getPlayers()) {
-                    if (isLocationSuitableForFallingLeaves(player.getLocation())) {
-                        spawnLeafParticles(player);
-                    }
-                }
-            }
-        }
-    }
-
-    private void spawnLeafParticles(Player player) {
-        Location loc = player.getLocation();
-        World world = player.getWorld();
-        Random random = new Random();
-
-        // Random offset within 10 blocks
-        double x = loc.getX() + random.nextDouble() * 20 - 10;
-        double y = loc.getY() + 10 + random.nextDouble() * 5; // 10-15 blocks above
-        double z = loc.getZ() + random.nextDouble() * 20 - 10;
-
-        Location particleLoc = new Location(world, x, y, z);
-
-        // Spawn falling leaf particle (using DUST_COLOR_TRANSITION with two colors for transition)
-        Color fromColor = getRandomLeafColor();
-        Color toColor = Color.WHITE; // Or another color for transition effect
-        world.spawnParticle(Particle.DUST, particleLoc, 1, new Particle.DustOptions(fromColor, 1));
-    }
-
-    private Color getRandomLeafColor() {
-        Random random = new Random();
-        int choice = random.nextInt(4); // 0, 1, 2, 3
-
-        switch (choice) {
-            case 0:
-                return Color.ORANGE;
-            case 1:
-                return Color.YELLOW;
-            case 2:
-                return Color.fromRGB(139, 69, 19); // Brown
-            default:
-                return Color.GREEN;
-        }
-    }
-
-    private boolean isLocationSuitableForFallingLeaves(Location loc) {
-        // Check if the player is in an area where leaves should fall
-        // Example: Check for nearby leaf blocks
-        for (int x = -5; x <= 5; x++) {
-            for (int y = 0; y <= 10; y++) {
-                for (int z = -5; z <= 5; z++) {
-                    Block block = loc.getBlock().getRelative(x, y, z);
-                    if (isLeaf(block.getType())) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     private void spawnMushroomPatches(Chunk chunk) {
         Random random = new Random();
-        for (int i = 0; i < 5; i++) { // Reduced density of mushroom patches
+
+        // Number of mushroom patches
+        for (int i = 0; i < 2; i++) {
             int x = random.nextInt(16);
             int z = random.nextInt(16);
             int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
@@ -144,18 +108,23 @@ public class AutumnEffects implements Listener {
 
             if (block.getType() == Material.GRASS_BLOCK) {
                 Material mushroomType = random.nextBoolean() ? Material.BROWN_MUSHROOM : Material.RED_MUSHROOM;
-                // Create a small patch of mushrooms
+
+                // Create a sparse patch of mushrooms
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {
-                        Block relative = block.getRelative(dx, 0, dz);
-                        if (relative.getRelative(0, 1, 0).getType() == Material.AIR) {
-                            relative.getRelative(0, 1, 0).setType(mushroomType, false);
+                        // 50% chance to place a mushroom on each block in the patch
+                        if (random.nextInt(100) < 30) {
+                            Block relative = block.getRelative(dx, 0, dz);
+                            if (relative.getRelative(0, 1, 0).getType() == Material.AIR) {
+                                relative.getRelative(0, 1, 0).setType(mushroomType, false);
+                            }
                         }
                     }
                 }
             }
         }
     }
+
 
     private void removeSweetBerryBushes(Chunk chunk) {
         for (int x = 0; x < 16; x++) {
@@ -168,10 +137,6 @@ public class AutumnEffects implements Listener {
                 }
             }
         }
-    }
-
-    private boolean isLeaf(Material material) {
-        return material.toString().contains("LEAVES");
     }
 
 }
