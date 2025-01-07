@@ -8,6 +8,7 @@ import tr.alperendemir.seasons.config.ConfigManager;
 import tr.alperendemir.seasons.data.DataManager;
 import tr.alperendemir.seasons.player.PlayerManager;
 import tr.alperendemir.seasons.season.SeasonManager;
+import tr.alperendemir.seasons.placeholder.SeasonsExpansion;
 
 public class Seasons extends JavaPlugin {
 
@@ -49,6 +50,8 @@ public class Seasons extends JavaPlugin {
         // Register listeners
         playerManager.registerEvents();
 
+        setupPlaceholders();
+
         getLogger().info("Seasons plugin has been enabled!");
     }
 
@@ -84,5 +87,12 @@ public class Seasons extends JavaPlugin {
 
     public TemperatureAPI getTemperatureAPI() {
         return temperatureAPI;
+    }
+
+    private void setupPlaceholders() {
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new SeasonsExpansion(this).register();
+            getLogger().info("PlaceholderAPI found - Registering placeholders");
+        }
     }
 }
