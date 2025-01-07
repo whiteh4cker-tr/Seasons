@@ -24,6 +24,7 @@
 -   Slowness
 -   Visible cold breath
 
+-   PlaceholderAPI support: `%seasons_current%`
 -   Custom season events
 
 ![alt text](https://i.imgur.com/vqd7ImQ.png)
