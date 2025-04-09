@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
 }
 
 group = 'tr.alperendemir'
@@ -24,6 +25,41 @@ repositories {
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT")
     compileOnly 'me.clip:placeholderapi:2.11.6'
+    
+    // Test dependencies
+    testImplementation("org.spigotmc:spigot-api:1.21.4-R0.1-SNAPSHOT") {
+        exclude group: 'junit', module: 'junit' // Exclude JUnit 4
+    }
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.12.1'
+}
+
+// Enable JUnit 5 for testing
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat = 'full'
+        showStandardStreams = true
+    }
+    reports {
+        html.required = true
+        junitXml.required = true
+    }
+    finalizedBy jacocoTestReport
+}
+
+// Add JaCoCo plugin for test coverage reporting
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }
 
 def targetJavaVersion = 21
