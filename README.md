@@ -6,7 +6,7 @@
 [![Spiget Downloads](https://img.shields.io/spiget/downloads/121435?style=flat&label=Spigot%20Downloads)](https://www.spigotmc.org/resources/seasons.121435/)
 [![Hangar Views](https://img.shields.io/hangar/views/SeasonsPlus?style=flat&label=Hangar%20Views)](https://hangar.papermc.io/icecubetr/SeasonsPlus)
 ![GitHub License](https://img.shields.io/github/license/whiteh4cker-tr/Seasons?style=flat)
-[![CodeFactor](https://www.codefactor.io/repository/github/whiteh4cker-tr/seasons/badge)](https://www.codefactor.io/repository/github/whiteh4cker-tr/seasons)
+[![CodeFactor](https://www.codefactor.io/Content/badges/A.svg)](https://www.codefactor.io/repository/github/whiteh4cker-tr/seasons)
 
 <big>Supported Platforms</big><br>
 [![spigot software](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3.2.0/assets/compact-minimal/supported/spigot_vector.svg)](https://www.spigotmc.org/)
