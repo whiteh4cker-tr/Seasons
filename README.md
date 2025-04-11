@@ -107,6 +107,12 @@ temperature-update-interval: 2
 # Configure the duration of each season in minutes.
 season-duration: 15
 
+# Settings for specific seasons and their effects
+season-settings:
+  winter:
+    # Controls how water freezes in winter: 'disabled' (default), 'partial' (lightweight freezing), or 'full' (all water to ice)
+    water-freezing: "disabled"
+
 # Temperature Effects
 # Configure the effects applied to players when they are too cold or too hot.
 temperature-effects:

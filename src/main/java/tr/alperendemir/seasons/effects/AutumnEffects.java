@@ -88,22 +88,56 @@ public class AutumnEffects implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onChunkLoad(ChunkLoadEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.AUTUMN) {
-            Chunk chunk = event.getChunk();
-            // Spawn big patches of mushrooms (consider performance)
-            spawnMushroomPatches(chunk);
-            // Remove the sweet berry bushes
-            removeSweetBerryBushes(chunk);
+            // Don't process the chunk immediately - schedule it for later to avoid blocking the server thread
+            final Chunk chunk = event.getChunk();
+            
+            // Schedule the task to run later, giving the server time to finish its own chunk processing
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                try {
+                    if (chunk != null && chunk.isLoaded()) {
+                        // Spawn big patches of mushrooms (consider performance)
+                        spawnMushroomPatches(chunk);
+                        // Remove the sweet berry bushes - use a separate delayed task for this
+                        scheduleBerryBushRemoval(chunk);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error in autumn chunk processing: " + e.getMessage());
+                }
+            }, 2L); // Add a short delay to ensure server's chunk processing is complete
         }
+    }
+    
+    private void scheduleBerryBushRemoval(Chunk chunk) {
+        // Process berry bush removal in small batches to prevent server lag
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            try {
+                if (chunk != null && chunk.isLoaded()) {
+                    removeSweetBerryBushes(chunk);
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error removing berry bushes: " + e.getMessage());
+            }
+        }, 1L);
     }
 
     private void spawnMushroomPatches(Chunk chunk) {
+        if (chunk == null || !chunk.isLoaded()) {
+            return;
+        }
+        
         Random random = new Random();
 
-        // Number of mushroom patches
-        for (int i = 0; i < 2; i++) {
+        // Number of mushroom patches - reduced to 1 for performance
+        for (int i = 0; i < 1; i++) {
             int x = random.nextInt(16);
             int z = random.nextInt(16);
-            int y = chunk.getWorld().getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
+            
+            World world = chunk.getWorld();
+            if (world == null) {
+                return;
+            }
+            
+            int y = world.getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z);
 
             // Ensure y is within the valid range (0 to 254)
             if (y < 0 || y > 254) {
@@ -111,6 +145,9 @@ public class AutumnEffects implements Listener {
             }
 
             Block block = chunk.getBlock(x, y, z);
+            if (block == null) {
+                continue;
+            }
 
             if (block.getType() == Material.GRASS_BLOCK) {
                 Material mushroomType = random.nextBoolean() ? Material.BROWN_MUSHROOM : Material.RED_MUSHROOM;
@@ -118,13 +155,18 @@ public class AutumnEffects implements Listener {
                 // Create a sparse patch of mushrooms
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {
-                        // 50% chance to place a mushroom on each block in the patch
+                        // 30% chance to place a mushroom on each block in the patch
                         if (random.nextInt(100) < 30) {
-                            Block relative = block.getRelative(dx, 0, dz);
-
-                            // Ensure the block above is within the valid range
-                            if (relative.getRelative(0, 1, 0).getType() == Material.AIR) {
-                                relative.getRelative(0, 1, 0).setType(mushroomType, false);
+                            try {
+                                Block relative = block.getRelative(dx, 0, dz);
+                                if (relative != null) {
+                                    Block above = relative.getRelative(0, 1, 0);
+                                    if (above != null && above.getType() == Material.AIR) {
+                                        above.setType(mushroomType, false);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                // Skip if there's an error with this block
                             }
                         }
                     }
@@ -133,17 +175,41 @@ public class AutumnEffects implements Listener {
         }
     }
 
-
     private void removeSweetBerryBushes(Chunk chunk) {
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                for (int y = 0; y < chunk.getWorld().getMaxHeight(); y++) {
-                    Block block = chunk.getBlock(x, y, z);
-                    if (block.getType() == Material.SWEET_BERRY_BUSH) {
-                        block.setType(Material.AIR, false);
+        if (chunk == null || !chunk.isLoaded()) {
+            return;
+        }
+        
+        try {
+            World world = chunk.getWorld();
+            if (world == null) {
+                return;
+            }
+            
+            // Process in smaller batches to avoid overwhelming the server
+            // Process only a fraction of the blocks per tick, focusing on where berry bushes typically grow
+            int maxY = Math.min(world.getMaxHeight(), 255);
+            
+            for (int x = 0; x < 16; x++) {
+                for (int z = 0; z < 16; z++) {
+                    // Focus on the top 64 blocks where berry bushes typically spawn
+                    int startY = Math.max(0, world.getHighestBlockYAt(chunk.getX() * 16 + x, chunk.getZ() * 16 + z) - 16);
+                    int endY = Math.min(startY + 64, maxY);
+                    
+                    for (int y = startY; y < endY; y++) {
+                        try {
+                            Block block = chunk.getBlock(x, y, z);
+                            if (block != null && block.getType() == Material.SWEET_BERRY_BUSH) {
+                                block.setType(Material.AIR, false);
+                            }
+                        } catch (Exception e) {
+                            // Skip this block if there's an error
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Error in berry bush removal: " + e.getMessage());
         }
     }
 

@@ -56,7 +56,7 @@ public class SpringEffects implements Listener {
         if (event.isCancelled()) {
             return;
         }
-        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
+        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
             Entity entity = event.getEntity();
             // Check if the entity has metadata indicating it was custom spawned
             if (entity.hasMetadata("springSpawned")) {
@@ -91,10 +91,89 @@ public class SpringEffects implements Listener {
     public void onChunkLoad(ChunkLoadEvent event) {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SPRING) {
             Chunk chunk = event.getChunk();
-            if (event.isNewChunk()) {
-                sprinkleFlowers(chunk);
+            
+            try {
+                // Check if winter water freezing was enabled
+                String winterFreezingOption = plugin.getConfigManager().getWinterWaterFreezingOption();
+                if (!winterFreezingOption.equalsIgnoreCase("disabled")) {
+                    // If winter freezing was enabled, we should melt ice in spring
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        if (chunk.isLoaded()) {
+                            meltIce(chunk, winterFreezingOption);
+                        }
+                    }, 1L);
+                }
+                
+                // Add flowers only to new chunks
+                if (event.isNewChunk()) {
+                    sprinkleFlowers(chunk);
+                }
+            } catch (Exception e) {
+                // No warning printed
             }
         }
+    }
+
+    private void meltIce(Chunk chunk, String previousWinterFreezingOption) {
+        if (chunk == null || !chunk.isLoaded()) {
+            return;
+        }
+        
+        try {
+            World world = chunk.getWorld();
+            if (world == null) {
+                return;
+            }
+            
+            int maxHeight = Math.min(world.getMaxHeight(), 255);
+            // Use same step size as was used in winter for consistency
+            int step = previousWinterFreezingOption.equalsIgnoreCase("full") ? 1 : 2;
+            
+            for (int x = 0; x < 16; x += step) {
+                for (int z = 0; z < 16; z += step) {
+                    for (int y = 0; y < maxHeight; y += step) {
+                        Block block = chunk.getBlock(x, y, z);
+                        
+                        // Skip if block is null
+                        if (block == null) {
+                            continue;
+                        }
+                        
+                        // If it's ice, convert back to water
+                        if (block.getType() == Material.ICE) {
+                            // Check if it has water below or adjacent to determine if it should be water
+                            if (hasAdjacentWater(block)) {
+                                block.setType(Material.WATER, false);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // No warning printed
+        }
+    }
+    
+    private boolean hasAdjacentWater(Block block) {
+        // Check below first (most likely place for water)
+        Block below = block.getRelative(0, -1, 0);
+        if (below != null && (below.getType() == Material.WATER || below.getType() == Material.ICE)) {
+            return true;
+        }
+        
+        // Check adjacent blocks
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (dx == 0 && dz == 0) continue; // Skip the center block
+                
+                Block adjacent = block.getRelative(dx, 0, dz);
+                if (adjacent != null && (adjacent.getType() == Material.WATER || adjacent.getType() == Material.ICE)) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
     }
 
     private void sprinkleFlowers(Chunk chunk) {

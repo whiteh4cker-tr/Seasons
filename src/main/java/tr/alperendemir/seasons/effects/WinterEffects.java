@@ -9,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.block.BlockGrowEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.metadata.FixedMetadataValue;
 import tr.alperendemir.seasons.Seasons;
 import tr.alperendemir.seasons.season.SeasonManager;
@@ -154,6 +155,87 @@ public class WinterEffects implements Listener {
                 Material.MELON_STEM, Material.PUMPKIN_STEM
         ));
         return cropTypes.contains(material);
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    public void onChunkLoad(ChunkLoadEvent event) {
+        if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.WINTER) {
+            try {
+                Chunk chunk = event.getChunk();
+                if (chunk != null && chunk.isLoaded()) {
+                    // Use scheduled task to avoid blocking the main thread
+                    Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                        if (chunk.isLoaded()) {
+                            applyWinterEffectsToChunk(chunk);
+                        }
+                    }, 1L); // Slight delay to ensure chunk is fully processed
+                }
+            } catch (Exception e) {
+                // No warning printed
+            }
+        }
+    }
+
+    private void applyWinterEffectsToChunk(Chunk chunk) {
+        if (chunk == null || !chunk.isLoaded()) {
+            return;
+        }
+        
+        try {
+            World world = chunk.getWorld();
+            if (world == null) {
+                return;
+            }
+            
+            // Get the water freezing option from config
+            String freezeOption = plugin.getConfigManager().getWinterWaterFreezingOption();
+            
+            // If freezing is disabled, don't process ice
+            if (freezeOption.equalsIgnoreCase("disabled")) {
+                return;
+            }
+            
+            int maxHeight = Math.min(world.getMaxHeight(), 255);
+            int step = freezeOption.equalsIgnoreCase("full") ? 1 : 2; // Full = check every block, partial = every other block
+            
+            // Process blocks based on config setting
+            for (int x = 0; x < 16; x += step) {
+                for (int z = 0; z < 16; z += step) {
+                    for (int y = 0; y < maxHeight; y += step) {
+                        Block block = chunk.getBlock(x, y, z);
+                        
+                        // Skip if block is null
+                        if (block == null) {
+                            continue;
+                        }
+                        
+                        // Skip if the block is a container (e.g., chest)
+                        if (isContainer(block.getType())) {
+                            continue;
+                        }
+                        
+                        // Surface water to ice conversion logic
+                        if (block.getType() == Material.WATER) {
+                            // In full mode, convert all water to ice regardless of sky exposure
+                            // In partial mode, only convert exposed water
+                            if (freezeOption.equalsIgnoreCase("full") || isExposedToSky(block)) {
+                                block.setType(Material.ICE, false);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // No warning printed
+        }
+    }
+    
+    private boolean isContainer(Material material) {
+        return material == Material.CHEST 
+            || material == Material.TRAPPED_CHEST 
+            || material == Material.BARREL
+            || material == Material.FURNACE
+            || material == Material.BREWING_STAND;
     }
 
 }

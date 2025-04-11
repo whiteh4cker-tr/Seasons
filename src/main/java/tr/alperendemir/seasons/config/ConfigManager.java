@@ -161,4 +161,8 @@ public class ConfigManager {
     public int getHeatBurningMaxTicks() {
         return config.getInt("temperature-effects.heat.burning.max-ticks", 100);
     }
+
+    public String getWinterWaterFreezingOption() {
+        return config.getString("season-settings.winter.water-freezing", "disabled");
+    }
 }
