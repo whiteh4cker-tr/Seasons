@@ -1,5 +1,5 @@
 name: Seasons
-version: '1.2.1'
+version: '1.3.0'
 main: tr.alperendemir.seasons.Seasons
 api-version: '1.21'
 softdepend: [PlaceholderAPI]
