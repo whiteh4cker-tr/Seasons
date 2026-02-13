@@ -1,5 +1,9 @@
 # Seasons Plugin - Configuration File
 
+# Display Temperature Action Bar
+# Set to 'true' to show the temperature action bar, 'false' to hide it entirely.
+display-temperature: true
+
 # Temperature Unit
 # Set to 'true' to use Fahrenheit, 'false' to use Celsius.
 temperature-in-fahrenheit: false

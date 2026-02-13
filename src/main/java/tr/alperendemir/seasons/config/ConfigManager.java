@@ -89,6 +89,10 @@ public class ConfigManager {
         return config.getInt("temperature-update-interval", 2);
     }
 
+    public boolean isDisplayTemperatureEnabled() {
+        return config.getBoolean("display-temperature", true);
+    }
+
     // --- Temperature Effects ---
     public boolean isColdSlownessEnabled() {
         return config.getBoolean("temperature-effects.cold.slowness.enabled", true);

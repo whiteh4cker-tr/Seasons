@@ -29,6 +29,9 @@ public class PlayerTemperature {
     }
 
     public void updateActionBar() {
+        if (!Seasons.getInstance().getConfigManager().isDisplayTemperatureEnabled()) {
+            return;
+        }
         String unit = Seasons.getInstance().getConfigManager().isTemperatureInFahrenheit() ? "°F" : "°C";
         double displayTemperature = temperature; // Default to Celsius
         if (unit.equals("°F")) {
