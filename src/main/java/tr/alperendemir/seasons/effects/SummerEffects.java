@@ -110,7 +110,9 @@ public class SummerEffects implements Listener {
         if (plugin.getSeasonManager().getCurrentSeason() == SeasonManager.Season.SUMMER) {
             Chunk chunk = event.getChunk();
             removeFlowers(chunk);
-            spawnBerryBushes(chunk);
+            if (plugin.getConfigManager().isSummerBerryBushSpawningEnabled()) {
+                spawnBerryBushes(chunk);
+            }
         }
     }
 

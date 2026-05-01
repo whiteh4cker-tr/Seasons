@@ -116,6 +116,9 @@ season-settings:
   winter:
     # Controls how water freezes in winter: 'disabled' (default), 'partial' (lightweight freezing), or 'full' (all water to ice)
     water-freezing: "disabled"
+  summer:
+    # Enable or disable plugin-driven sweet berry bush spawning during summer. Set to 'false' to disable it.
+    berry-bush-spawning: true
 
 # Temperature Effects
 # Configure the effects applied to players when they are too cold or too hot.

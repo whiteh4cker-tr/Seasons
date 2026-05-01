@@ -169,4 +169,8 @@ public class ConfigManager {
     public String getWinterWaterFreezingOption() {
         return config.getString("season-settings.winter.water-freezing", "disabled");
     }
+
+    public boolean isSummerBerryBushSpawningEnabled() {
+        return config.getBoolean("season-settings.summer.berry-bush-spawning", true);
+    }
 }
