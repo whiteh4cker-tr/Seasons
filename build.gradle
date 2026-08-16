@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'tr.alperendemir'
-version = '1.4.0'
+version = '1.4.1'
 
 repositories {
     mavenCentral()
@@ -22,8 +22,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:26.1.2-R0.1-SNAPSHOT")
-    compileOnly 'me.clip:placeholderapi:2.12.2'
+    compileOnly("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")
+    compileOnly 'me.clip:placeholderapi:2.12.3'
 }
 
 def targetJavaVersion = 25

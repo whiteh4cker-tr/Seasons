@@ -7,7 +7,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFormEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.entity.SpawnerSpawnEvent;
+import org.bukkit.event.entity.TrialSpawnerSpawnEvent;
 import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -112,12 +115,41 @@ public class WinterEffects implements Listener {
             }
 
             if (entity.getType() == EntityType.SKELETON) {
+                if (isSpawnedBySpawner(event)) {
+                    // Spawner spawn caps only count entities of the type the
+                    // spawner is configured to spawn (same EntityType). Converting
+                    // its skeletons to strays would defeat that cap, so the
+                    // spawner would keep spawning strays without limit.
+                    return; // Let spawners spawn their configured mobs
+                }
+
                 event.setCancelled(true); // Cancel skeleton spawn
 
                 // Spawn a stray instead (no need to store the Stray in a variable)
                 entity.getWorld().spawnEntity(event.getLocation(), EntityType.STRAY);
             }
         }
+    }
+
+    /**
+     * Checks whether the given spawn event was caused by a spawner
+     * (mob spawner or trial spawner).
+     */
+    private boolean isSpawnedBySpawner(EntitySpawnEvent event) {
+        if (event instanceof SpawnerSpawnEvent || event instanceof TrialSpawnerSpawnEvent) {
+            return true;
+        }
+        if (event instanceof CreatureSpawnEvent creatureSpawnEvent) {
+            switch (creatureSpawnEvent.getSpawnReason()) {
+                case SPAWNER:
+                case SPAWNER_EGG:
+                case TRIAL_SPAWNER:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
     }
 
     @EventHandler(priority = EventPriority.LOW)
