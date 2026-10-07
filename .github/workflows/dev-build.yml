@@ -1,0 +1,202 @@
+name: Dev Build
+
+# Every push to main builds the plugin and publishes it to Modrinth as an *alpha* version named
+# <versionBase>-<short git SHA> (e.g. 1.4.1-b1d49ff). Real releases are still published by hand.
+#
+# Required secret: MODRINTH_TOKEN (a Modrinth API token with the VERSION_CREATE + VERSION_READ
+# scopes). The project id below is public and needs no secret.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.gitattributes'
+      - '.github/**'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Upload to Modrinth as an alpha? (Uncheck for a build-only dry run.)'
+        type: boolean
+        default: true
+        required: false
+
+permissions:
+  contents: read
+
+# Two pushes in a row must not race, and a run must never be killed mid-upload.
+concurrency:
+  group: dev-build-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Project id of https://modrinth.com/plugin/seasonsplus (public info, also in the README badge).
+  MODRINTH_ID: R9i0HmgS
+
+jobs:
+  dev-build:
+    name: Build & publish alpha
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build dev jar
+        id: build
+        run: |
+          set -o pipefail
+          ./gradlew --console=plain build printVersion -Palpha=true | tee gradle-output.log
+          VERSION="$(grep '^VERSION=' gradle-output.log | tail -n 1 | cut -d '=' -f 2-)"
+          if [ -z "${VERSION}" ]; then
+            echo "::error::printVersion did not print VERSION=...; cannot name the release."
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Built Seasons-${VERSION}.jar"
+
+      - name: Resolve changelog range
+        id: range
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          set -uo pipefail
+          ZERO_SHA='0000000000000000000000000000000000000000'
+          RANGE=''
+          SOURCE=''
+
+          # 1. The push payload range - but only if that commit is reachable here. A force-push or
+          #    rebase can leave it missing, and a wrong range would publish a wrong changelog.
+          if [ -n "${EVENT_BEFORE:-}" ] && [ "${EVENT_BEFORE}" != "${ZERO_SHA}" ] \
+             && git cat-file -e "${EVENT_BEFORE}^{commit}" 2>/dev/null; then
+            RANGE="${EVENT_BEFORE}..HEAD"
+            SOURCE='push payload'
+          fi
+
+          # 2. Everything since the most recent tag.
+          if [ -z "${RANGE}" ] && LAST_TAG="$(git describe --tags --abbrev=0 HEAD 2>/dev/null)"; then
+            RANGE="${LAST_TAG}..HEAD"
+            SOURCE="last tag (${LAST_TAG})"
+          fi
+
+          # 3. No usable reference point: the last 20 commits.
+          if [ -z "${RANGE}" ]; then
+            RANGE='-n 20'
+            SOURCE='last 20 commits'
+          fi
+
+          echo "range=${RANGE}" >> "$GITHUB_OUTPUT"
+          echo "Changelog range: ${RANGE} (source: ${SOURCE})"
+
+      - name: Build changelog
+        id: changelog
+        env:
+          VERSION: ${{ steps.build.outputs.version }}
+          RANGE: ${{ steps.range.outputs.range }}
+        run: |
+          set -uo pipefail
+          [ -n "${RANGE:-}" ] || RANGE='-n 20'
+          read -r -a RANGE_ARGS <<< "${RANGE}"
+          if ! NOTES="$(git log --no-merges --pretty=format:'- %s (%h)' "${RANGE_ARGS[@]}")"; then
+            echo "::warning::git log failed for '${RANGE}'; publishing without a commit list."
+            NOTES=''
+          fi
+          if [ -z "${NOTES}" ]; then
+            NOTES='* No new code changes in this build.'
+          fi
+
+          # Multi-line output values need a heredoc delimiter.
+          {
+            echo 'notes<<EOF'
+            printf '%s\n' "${NOTES}"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Seasons ${VERSION:-unknown} (alpha)"
+            echo ''
+            printf '%s\n' "${NOTES}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Read Minecraft version from plugin.yml
+        id: mc_version
+        run: |
+          set -uo pipefail
+          # tr also strips \r: with core.autocrlf/`* text=auto`, a Windows checkout gives CRLF and a
+          # trailing \r would silently break the api-version match below.
+          API_VERSION="$(grep -m1 '^[[:space:]]*api-version:' src/main/resources/plugin.yml \
+            | tr -d "\"'\r" | awk '{ print $2 }')"
+          if ! printf '%s' "${API_VERSION}" | grep -Eq '^[0-9]+(\.[0-9]+){1,2}$'; then
+            echo "::error::No usable api-version in plugin.yml (got '${API_VERSION}'). Update api-version, or adjust the game-versions step for ranges."
+            exit 1
+          fi
+          echo "api=${API_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Modrinth game-versions: ${API_VERSION}"
+
+      # Before the publish step, so the jar is recoverable even if publishing fails.
+      - name: Upload jar as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Seasons-${{ steps.build.outputs.version }}
+          path: build/libs/Seasons-${{ steps.build.outputs.version }}.jar
+          if-no-files-found: error
+          retention-days: 30
+
+      # Re-running a failed run after the upload already succeeded would otherwise die on
+      # "version number already used".
+      - name: Check whether this version is already on Modrinth
+        id: already_published
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish != false }}
+        env:
+          VERSION: ${{ steps.build.outputs.version }}
+        run: |
+          STATUS="$(curl -s -o /dev/null -w '%{http_code}' \
+            -H 'User-Agent: Seasons-DevBuild/1.0 (GitHub Actions)' \
+            "https://api.modrinth.com/v2/project/${MODRINTH_ID}/version/${VERSION}")"
+          if [ "${STATUS}" = '200' ]; then
+            echo "Seasons ${VERSION} is already published; skipping the upload."
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          else
+            # Anything unexpected (rate limit, API hiccup) falls through to a publish attempt:
+            # a loud duplicate-version error beats silently skipping the release.
+            [ "${STATUS}" = '404' ] \
+              || echo "::warning::Modrinth lookup returned HTTP ${STATUS}; attempting to publish anyway."
+            echo "Not published yet (HTTP ${STATUS})."
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish alpha to Modrinth
+        # Deliberately unconditional on push: an absent or expired MODRINTH_TOKEN must fail the run
+        # loudly rather than silently skip the build everyone is waiting for. Only a manual run with
+        # "publish" unchecked skips it.
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.publish != false) && steps.already_published.outputs.exists != 'true' }}
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          modrinth-id: ${{ env.MODRINTH_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-featured: false
+          files: build/libs/Seasons-${{ steps.build.outputs.version }}.jar
+          name: Seasons ${{ steps.build.outputs.version }}
+          version: ${{ steps.build.outputs.version }}
+          version-type: alpha
+          changelog: ${{ steps.changelog.outputs.notes }}
+          loaders: |
+            paper
+            purpur
+            spigot
+          game-versions: ${{ steps.mc_version.outputs.api }}

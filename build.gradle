@@ -3,7 +3,29 @@ plugins {
 }
 
 group = 'tr.alperendemir'
-version = '1.4.1'
+
+// Version: the base lives in gradle.properties (versionBase). Alpha/dev builds (-Palpha, which is
+// what CI publishes to Modrinth as an alpha) append the short git SHA, e.g. 1.4.1-b1d49ff, so a dev
+// jar can be traced to the exact commit it came from. plugin.yml gets the same string via
+// processResources below, so /version Seasons reports it on a live server.
+// The SHA is resolved at configuration time; with Gradle's configuration cache enabled locally a
+// cache hit could reuse a stale SHA. CI never enables it, so published versions are always correct.
+def versionBase = providers.gradleProperty('versionBase').getOrElse('0.0.0')
+def resolveShortSha = {
+    def override = providers.gradleProperty('versionSha').getOrNull()
+    if (override) {
+        return override.trim()
+    }
+    try {
+        def proc = ['git', 'rev-parse', '--short', 'HEAD'].execute()
+        proc.waitFor()
+        return proc.exitValue() == 0 ? proc.text.trim() : ''
+    } catch (Exception ignored) {
+        return '' // e.g. building from a source archive with no git checkout
+    }
+}
+def alphaSha = project.hasProperty('alpha') ? resolveShortSha() : ''
+version = alphaSha ? "${versionBase}-${alphaSha}" : versionBase
 
 repositories {
     mavenCentral()
@@ -22,8 +44,13 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:26.3-R0.1-SNAPSHOT")
     compileOnly 'me.clip:placeholderapi:2.12.3'
+    // SeasonsExpansion uses @NotNull. It used to leak onto the compile classpath by accident via
+    // spigot-api -> joml -> kotlin-stdlib -> org.jetbrains:annotations:13.0, and spigot-api 26.3
+    // dropped that chain. Declare it directly so it cannot break on an unrelated API bump.
+    // CLASS-retention annotations, so compileOnly is enough - nothing is bundled or needed at runtime.
+    compileOnly 'org.jetbrains:annotations:26.1.0'
 }
 
 def targetJavaVersion = 25
@@ -57,5 +84,14 @@ processResources {
     }
     filesMatching('seasons.yml') {
         expand props
+    }
+}
+
+// Lets CI read the resolved version: ./gradlew build printVersion -Palpha=true
+def resolvedVersion = version.toString()
+tasks.register('printVersion') {
+    description = 'Prints the resolved project version as VERSION=<version>.'
+    doLast {
+        println "VERSION=$resolvedVersion"
     }
 }
