@@ -61,6 +61,10 @@ jobs:
         id: build
         run: |
           set -o pipefail
+          # The wrapper can land without its exec bit (Windows-authored repo), which fails the very
+          # next line with exit 126. gradlew is committed 100755 now; this keeps us alive if that ever
+          # regresses.
+          test -x gradlew || chmod +x gradlew
           ./gradlew --console=plain build printVersion -Palpha=true | tee gradle-output.log
           VERSION="$(grep '^VERSION=' gradle-output.log | tail -n 1 | cut -d '=' -f 2-)"
           if [ -z "${VERSION}" ]; then
